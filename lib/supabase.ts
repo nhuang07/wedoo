@@ -1,5 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
+import * as ImagePicker from "expo-image-picker";
+import { Alert } from "react-native";
 import "react-native-url-polyfill/auto";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
@@ -177,4 +179,120 @@ export const calculateGroupMood = async (groupId: string) => {
     .update({ creature_mood: mood })
     .eq("id", groupId);
   return mood;
+};
+
+export const recalculateGroupMood = async (groupId: string) => {
+  const { data: tasks, error } = await supabase
+    .from("tasks")
+    .select("completed")
+    .eq("group_id", groupId);
+
+  if (error || !tasks || tasks.length === 0) return 50;
+
+  const completed = tasks.filter((t) => t.completed).length;
+  const mood = Math.round((completed / tasks.length) * 100);
+
+  await supabase
+    .from("groups")
+    .update({ creature_mood: mood })
+    .eq("id", groupId);
+
+  return mood;
+};
+
+export const subscribeToGroupTasks = (
+  groupId: string,
+  onUpdate: () => void,
+) => {
+  return supabase
+    .channel(`group-tasks-${groupId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "tasks",
+        filter: `group_id=eq.${groupId}`,
+      },
+      onUpdate,
+    )
+    .subscribe();
+};
+
+export const pickImage = async (useCamera: boolean = false) => {
+  // Ask which source
+  if (useCamera) {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      throw new Error("Camera permission required");
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (result.canceled) return null;
+    return result.assets[0].uri;
+  } else {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (result.canceled) return null;
+    return result.assets[0].uri;
+  }
+};
+
+export const pickImageWithChoice = async (): Promise<string | null> => {
+  return new Promise((resolve) => {
+    Alert.alert("Add Photo", "How would you like to add your proof?", [
+      {
+        text: "Take Photo",
+        onPress: async () => {
+          const uri = await pickImage(true);
+          resolve(uri);
+        },
+      },
+      {
+        text: "Choose from Library",
+        onPress: async () => {
+          const uri = await pickImage(false);
+          resolve(uri);
+        },
+      },
+      {
+        text: "Cancel",
+        style: "cancel",
+        onPress: () => resolve(null),
+      },
+    ]);
+  });
+};
+
+export const uploadTaskPhoto = async (taskId: string, uri: string) => {
+  const ext = uri.split(".").pop() || "jpg";
+  const fileName = `${taskId}-${Date.now()}.${ext}`;
+
+  const response = await fetch(uri);
+  const arrayBuffer = await response.arrayBuffer();
+
+  const { error: uploadError } = await supabase.storage
+    .from("task-photos")
+    .upload(fileName, arrayBuffer, {
+      contentType: `image/${ext}`,
+      upsert: true,
+    });
+
+  if (uploadError) {
+    console.log("Upload error:", uploadError);
+    throw uploadError;
+  }
+
+  const { data } = supabase.storage.from("task-photos").getPublicUrl(fileName);
+  return data.publicUrl;
 };

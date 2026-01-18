@@ -27,16 +27,19 @@ const MOCK_MEMBERS: GroupMember[] = [
 
 const MOCK_TASKS: Record<string, Task[]> = {
   me: [
-    { id: "t1", title: "Finish report", completed: false, dueDate: "2026-01-20" },
+    {
+      id: "t1",
+      title: "Finish report",
+      completed: false,
+      dueDate: "2026-01-20",
+    },
     { id: "t2", title: "Review PR #42", completed: true },
   ],
   u1: [
     { id: "t3", title: "Update design docs", completed: false },
     { id: "t4", title: "Fix navbar bug", completed: true },
   ],
-  u2: [
-    { id: "t5", title: "Prepare sprint demo", completed: false },
-  ],
+  u2: [{ id: "t5", title: "Prepare sprint demo", completed: false }],
   u3: [
     { id: "t6", title: "Write unit tests", completed: true },
     { id: "t7", title: "Refactor API calls", completed: false },
