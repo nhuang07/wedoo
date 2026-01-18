@@ -1,25 +1,31 @@
-import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Image,
   ImageBackground,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { getMyGroups, supabase } from "@/lib/supabase";
 
 export default function HomeScreen() {
   const [groups, setGroups] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadGroups();
-  }, []);
+  // Reload groups whenever the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadGroups();
+    }, [])
+  );
 
   const loadGroups = async () => {
     try {
@@ -33,13 +39,20 @@ export default function HomeScreen() {
       setUserId(user.id);
 
       const userGroups = await getMyGroups(user.id);
+      console.log('Raw userGroups:', userGroups);
       const groupsList = userGroups.map((g: any) => g.groups).filter(Boolean);
       setGroups(groupsList);
     } catch (error) {
       console.log("Error loading groups:", error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadGroups();
   };
 
   const handleGroupPress = (group: any) => {
@@ -86,6 +99,14 @@ export default function HomeScreen() {
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#6366F1"
+              colors={["#6366F1"]}
+            />
+          }
         >
           {groups.length === 0 ? (
             <View style={styles.emptyState}>
@@ -138,7 +159,7 @@ export default function HomeScreen() {
             style={styles.navButton}
             onPress={() => router.push("/create-group")}
           >
-            <Text style={styles.navButtonIcon}>➕</Text>
+            <Ionicons name="add" size={24} color="#fff" />
             <Text style={styles.navButtonText}>Create Group</Text>
           </TouchableOpacity>
 
@@ -146,7 +167,7 @@ export default function HomeScreen() {
             style={styles.navButton}
             onPress={() => router.push("/join-group")}
           >
-            <Text style={styles.navButtonIcon}>🔗</Text>
+            <Ionicons name="link" size={24} color="#fff" />
             <Text style={styles.navButtonText}>Join Group</Text>
           </TouchableOpacity>
 
@@ -154,7 +175,7 @@ export default function HomeScreen() {
             style={styles.navButton}
             onPress={() => router.push("/profile")}
           >
-            <Text style={styles.navButtonIcon}>👤</Text>
+            <Ionicons name="person" size={24} color="#fff" />
             <Text style={styles.navButtonText}>Profile</Text>
           </TouchableOpacity>
         </View>
@@ -291,13 +312,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  navButtonIcon: {
-    fontSize: 24,
-    marginBottom: 4,
-  },
   navButtonText: {
     color: "#fff",
     fontSize: 12,
     fontWeight: "600",
+    marginTop: 4,
   },
 });
