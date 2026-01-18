@@ -34,7 +34,9 @@ export async function registerForPushNotifications(userId: string) {
     return null;
   }
 
-  const token = (await Notifications.getExpoPushTokenAsync()).data;
+  const token = (await Notifications.getExpoPushTokenAsync({
+    projectId: '75c471b1-06c7-4b24-81b7-e1ab0ef3128a',
+  })).data;
 
   // Save token to user's profile
   await supabase

@@ -1,3 +1,4 @@
+import { getGroupMembers } from "@/lib/supabase";
 import React, { useEffect, useRef } from "react";
 import {
   ActivityIndicator,
