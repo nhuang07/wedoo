@@ -40,6 +40,20 @@ const NWHappy = require("@/assets/images/NWhappy.png");
 const NWNeutral = require("@/assets/images/NWneutral.png");
 const NWSad = require("@/assets/images/NWsad.png");
 
+const calculateMood = (group: any, completedCount: number) => {
+  if (!group?.created_at) return 50;
+
+  const secondsElapsed =
+    (Date.now() - new Date(group.created_at).getTime()) / 1000;
+
+  const decay = Math.floor(secondsElapsed / 15) * 10;
+  const boost = completedCount * 20;
+
+  const difference = Math.max(-100, Math.min(100, boost - decay));
+
+  return Math.round(50 + difference / 2);
+};
+
 export default function GroupHomeScreen() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [allTasks, setAllTasks] = useState<any[]>([]);
@@ -72,6 +86,15 @@ export default function GroupHomeScreen() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const completedCount = allTasks.filter((t) => t.completed).length;
+      setPetMood(calculateMood(group, completedCount));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [allTasks, group]);
 
   // Real-time subscriptions
   useEffect(() => {
