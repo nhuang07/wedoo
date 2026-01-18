@@ -1,10 +1,10 @@
 import {
   getProfile,
   pickImage,
-  supabase,
   updateProfile,
   uploadAvatar,
-} from "@/lib/supabase";
+} from "@/lib/profile";
+import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
