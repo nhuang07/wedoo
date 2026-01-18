@@ -672,7 +672,7 @@ export default function GroupHomeScreen() {
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <TouchableOpacity
-                onPress={() => router.push("/home")}
+                onPress={() => router.push("/")}
                 style={styles.homeButton}
               >
                 <Text style={styles.homeButtonText}>🏠</Text>
@@ -688,28 +688,31 @@ export default function GroupHomeScreen() {
 
             <Text style={styles.headerTitle}>{group?.name || "My Pet"}</Text>
 
-            <GroupInfoButton
-              inviteCode={group?.invite_code || "------"}
-              groupTasks={allTasks}
-              myTasks={tasks}
-              onLeftGroup={async () => {
-                // Reload groups to see what's left
-                const userGroups = await getMyGroups(userId!);
-                const groups = userGroups
-                  .map((g: any) => g.groups)
-                  .filter(Boolean);
-                if (groups.length > 0) {
-                  // Switch to first remaining group
-                  setGroup(groups[0]);
-                  setAllGroups(groups);
-                  await loadTasks(userId!, groups[0].id);
-                  await loadMembers(groups[0].id);
-                } else {
-                  // No groups left, go to connect page
-                  router.replace("/connect-page");
-                }
-              }}
-            />
+            <View style={styles.headerRight}>
+              {" "}
+              <GroupInfoButton
+                inviteCode={group?.invite_code || "------"}
+                groupTasks={allTasks}
+                myTasks={tasks}
+                onLeftGroup={async () => {
+                  // Reload groups to see what's left
+                  const userGroups = await getMyGroups(userId!);
+                  const groups = userGroups
+                    .map((g: any) => g.groups)
+                    .filter(Boolean);
+                  if (groups.length > 0) {
+                    // Switch to first remaining group
+                    setGroup(groups[0]);
+                    setAllGroups(groups);
+                    await loadTasks(userId!, groups[0].id);
+                    await loadMembers(groups[0].id);
+                  } else {
+                    // No groups left, go to connect page
+                    router.replace("/connect-page");
+                  }
+                }}
+              />
+            </View>
           </View>
 
           {/* Mascot */}
@@ -954,6 +957,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "transparent",
   },
+  menuButtonText: {
+    fontSize: 24,
+    color: "#131313",
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -962,7 +969,6 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 16,
   },
-
   menuButton: {
     width: 40,
     height: 40,
@@ -970,16 +976,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.3)",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 16,
-  },
-  menuButtonText: {
-    fontSize: 24,
-    color: "#131313",
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#131313",
+    // Remove marginRight: 16
   },
   mascotContainer: {
     alignItems: "center",
@@ -1397,11 +1394,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#fff",
   },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
   homeButton: {
     width: 40,
     height: 40,
@@ -1412,5 +1404,22 @@ const styles = StyleSheet.create({
   },
   homeButtonText: {
     fontSize: 20,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    width: 88, // 40 + 8 + 40 = two buttons + gap
+  },
+  headerRight: {
+    width: 88, // Same width as left side
+    alignItems: "flex-end",
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#131313",
+    textAlign: "center",
+    flex: 1,
   },
 });
