@@ -49,7 +49,7 @@ export default function JoinGroupScreen() {
       <View style={styles.container}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => router.replace("/connect-page")}
+          onPress={() => router.back()}
           activeOpacity={0.7}
         >
           <Text style={styles.backButtonText}>← Back</Text>
