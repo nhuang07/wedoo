@@ -25,6 +25,7 @@ import {
   Image,
   ImageBackground,
   Modal,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -351,6 +352,10 @@ export default function GroupHomeScreen() {
           onRequestClose={() => setProfileModalVisible(false)}
         >
           <View style={styles.modalOverlay}>
+            <Pressable
+              style={StyleSheet.absoluteFillObject}
+              onPress={() => setProfileModalVisible(false)}
+            />
             <View style={styles.modalContent}>
               <TouchableOpacity
                 style={styles.closeButton}
