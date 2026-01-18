@@ -689,7 +689,6 @@ export default function GroupHomeScreen() {
             <Text style={styles.headerTitle}>{group?.name || "My Pet"}</Text>
 
             <View style={styles.headerRight}>
-              {" "}
               <GroupInfoButton
                 inviteCode={group?.invite_code || "------"}
                 groupTasks={allTasks}
