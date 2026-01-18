@@ -36,6 +36,13 @@
         {
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to verify task completion."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#6366F1"
+        }
       ]
     ],
     "experiments": {

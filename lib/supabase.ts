@@ -6,6 +6,7 @@ import "react-native-url-polyfill/auto";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
+const NUDGE_COOLDOWN_MS = __DEV__ ? 10 * 1000 : 5 * 60 * 1000;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -338,4 +339,73 @@ export const getProfile = async (userId: string) => {
     .single();
   if (error) throw error;
   return data;
+};
+
+export const canNudgeUser = async (
+  senderId: string,
+  receiverId: string,
+  groupId: string,
+) => {
+  const { data } = await supabase
+    .from("nudges")
+    .select("created_at")
+    .eq("sender_id", senderId)
+    .eq("receiver_id", receiverId)
+    .eq("group_id", groupId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (!data) return { canNudge: true, secondsLeft: 0 };
+
+  const timeSince = Date.now() - new Date(data.created_at).getTime();
+  const canNudge = timeSince > NUDGE_COOLDOWN_MS;
+  const secondsLeft = canNudge
+    ? 0
+    : Math.ceil((NUDGE_COOLDOWN_MS - timeSince) / 1000);
+
+  return { canNudge, secondsLeft };
+};
+
+export const sendNudge = async (
+  senderId: string,
+  receiverId: string,
+  groupId: string,
+) => {
+  // Record the nudge
+  const { error } = await supabase.from("nudges").insert({
+    sender_id: senderId,
+    receiver_id: receiverId,
+    group_id: groupId,
+  });
+
+  if (error) throw error;
+
+  // Get receiver's push token and sender's name
+  const { data: receiver } = await supabase
+    .from("profiles")
+    .select("push_token")
+    .eq("id", receiverId)
+    .single();
+
+  const { data: sender } = await supabase
+    .from("profiles")
+    .select("username")
+    .eq("id", senderId)
+    .single();
+
+  if (receiver?.push_token) {
+    await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        to: receiver.push_token,
+        title: "You got nudged! 👉",
+        body: `${sender?.username || "Someone"} nudged you! Do your tasks!`,
+        sound: "default",
+      }),
+    });
+  }
 };

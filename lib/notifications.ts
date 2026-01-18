@@ -1,0 +1,53 @@
+import * as Device from "expo-device";
+import * as Notifications from "expo-notifications";
+import { Platform } from "react-native";
+import { supabase } from "./supabase";
+
+// Handle notifications when app is in foreground
+Notifications.setNotificationHandler({
+  handleNotification:
+    async (): Promise<Notifications.NotificationBehavior> => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+});
+
+export async function registerForPushNotifications(userId: string) {
+  if (!Device.isDevice) {
+    console.log("Push notifications require a physical device");
+    return null;
+  }
+
+  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  let finalStatus = existingStatus;
+
+  if (existingStatus !== "granted") {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
+  }
+
+  if (finalStatus !== "granted") {
+    console.log("Permission not granted for push notifications");
+    return null;
+  }
+
+  const token = (await Notifications.getExpoPushTokenAsync()).data;
+
+  // Save token to user's profile
+  await supabase
+    .from("profiles")
+    .update({ push_token: token })
+    .eq("id", userId);
+
+  if (Platform.OS === "android") {
+    Notifications.setNotificationChannelAsync("default", {
+      name: "default",
+      importance: Notifications.AndroidImportance.MAX,
+    });
+  }
+
+  return token;
+}

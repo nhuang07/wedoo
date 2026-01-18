@@ -2,6 +2,7 @@
 import GroupInfoButton from "@/components/GroupInfoButton";
 import MenuDrawer from "@/components/MenuDrawer";
 import TaskCard from "@/components/TaskCard";
+import { canNudgeUser, sendNudge } from "../lib/supabase";
 
 import { generateTasksForUser } from "@/lib/gemini";
 import {
@@ -19,6 +20,7 @@ import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
   ImageBackground,
   Modal,
@@ -49,6 +51,8 @@ export default function GroupHomeScreen() {
   const [customTask, setCustomTask] = useState("");
   const [allGroups, setAllGroups] = useState<any[]>([]);
   const [groupsLoading, setGroupsLoading] = useState(false);
+  const [nudgeLoading, setNudgeLoading] = useState(false);
+  const [nudgeCooldown, setNudgeCooldown] = useState(0);
 
   // Tab for my tasks vs all tasks
   const [activeTab, setActiveTab] = useState<"mine" | "all">("mine");
@@ -239,6 +243,35 @@ export default function GroupHomeScreen() {
     setGroup({ ...group, creature_mood: newMood });
   };
 
+  const handleNudge = async () => {
+    if (!userId || !selectedMember?.user_id || !group?.id) return;
+
+    setNudgeLoading(true);
+    try {
+      const { canNudge, secondsLeft } = await canNudgeUser(
+        userId,
+        selectedMember.user_id,
+        group.id,
+      );
+
+      if (!canNudge) {
+        setNudgeCooldown(secondsLeft);
+        Alert.alert("Cooldown", `Wait ${secondsLeft}s before nudging again`);
+        return;
+      }
+
+      await sendNudge(userId, selectedMember.user_id, group.id);
+      Alert.alert(
+        "Nudged! 👉",
+        `You nudged ${selectedMember.fullProfile?.username || "them"}!`,
+      );
+    } catch (error: any) {
+      Alert.alert("Error", error.message);
+    } finally {
+      setNudgeLoading(false);
+    }
+  };
+
   const openMemberProfile = async (member: any) => {
     try {
       const profile = await getProfile(member.user_id);
@@ -281,24 +314,18 @@ export default function GroupHomeScreen() {
     >
       <View style={styles.container}>
         {/* Menu Drawer */}
-        <Modal visible={menuOpen} animationType="slide" transparent>
-          <View style={{ flex: 1, flexDirection: "row" }}>
-            <MenuDrawer
-              groups={allGroups}
-              currentGroupId={group?.id}
-              loading={groupsLoading}
-              onClose={() => setMenuOpen(false)}
-              onProfile={goToProfile}
-              onCreateGroup={() => router.push("/create-group")}
-              onJoinGroup={() => router.push("/join-group")}
-              onSelectGroup={handleSelectGroup}
-            />
-            <TouchableOpacity
-              style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.3)" }}
-              onPress={() => setMenuOpen(false)}
-            />
-          </View>
-        </Modal>
+        {menuOpen && (
+          <MenuDrawer
+            groups={allGroups}
+            currentGroupId={group?.id}
+            loading={groupsLoading}
+            onClose={() => setMenuOpen(false)}
+            onProfile={goToProfile}
+            onCreateGroup={() => router.push("/create-group")}
+            onJoinGroup={() => router.push("/join-group")}
+            onSelectGroup={handleSelectGroup}
+          />
+        )}
 
         {/* Profile Modal */}
         <Modal
@@ -347,6 +374,18 @@ export default function GroupHomeScreen() {
                       <Text style={styles.statLabel}>All Time</Text>
                     </View>
                   </View>
+                  {selectedMember?.user_id !== userId && (
+                    <TouchableOpacity
+                      style={styles.nudgeButton}
+                      onPress={handleNudge}
+                      disabled={nudgeLoading}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.nudgeButtonText}>
+                        {nudgeLoading ? "Nudging..." : "👉 Nudge"}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </>
               )}
             </View>
@@ -968,5 +1007,18 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: "#6366F1",
     fontWeight: "600",
+  },
+  nudgeButton: {
+    marginTop: 16,
+    backgroundColor: "#6366F1",
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 24,
+  },
+  nudgeButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 16,
+    textAlign: "center",
   },
 });

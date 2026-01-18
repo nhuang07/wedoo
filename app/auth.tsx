@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { registerForPushNotifications } from "../lib/notifications";
 
 export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
@@ -29,12 +30,16 @@ export default function AuthScreen() {
     setLoading(true);
     try {
       if (isLogin) {
-        await signIn(email, password);
-        // Existing user - go to main tab
+        const data = await signIn(email, password);
+        if (data?.user?.id) {
+          await registerForPushNotifications(data.user.id);
+        }
         router.replace("/");
       } else {
-        await signUp(email, password, username);
-        // New user - go to connect page
+        const data = await signUp(email, password, username);
+        if (data?.user?.id) {
+          await registerForPushNotifications(data.user.id);
+        }
         router.replace("/connect-page");
       }
     } catch (error: any) {
@@ -43,7 +48,6 @@ export default function AuthScreen() {
       setLoading(false);
     }
   };
-
   return (
     <ImageBackground
       source={require("../assets/images/auth-bg.png")}
@@ -60,9 +64,7 @@ export default function AuthScreen() {
             {isLogin ? "Welcome!" : "Create Account"}
           </Text>
           <Text style={styles.subtitle}>
-            {isLogin
-              ? "Sign in to continue"
-              : "Join us and start connecting"}
+            {isLogin ? "Sign in to continue" : "Join us and start connecting"}
           </Text>
         </View>
 
@@ -108,17 +110,15 @@ export default function AuthScreen() {
               {loading
                 ? "Please wait..."
                 : isLogin
-                ? "Sign In"
-                : "Create Account"}
+                  ? "Sign In"
+                  : "Create Account"}
             </Text>
           </TouchableOpacity>
 
           {/* TOGGLE */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>
-              {isLogin
-                ? "Don't have an account?"
-                : "Already have an account?"}
+              {isLogin ? "Don't have an account?" : "Already have an account?"}
             </Text>
             <TouchableOpacity onPress={() => setIsLogin(!isLogin)}>
               <Text style={styles.footerLink}>
