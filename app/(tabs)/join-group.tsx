@@ -1,40 +1,53 @@
-import { Text, View } from '@/components/Themed';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { Text, View } from "@/components/Themed";
+import { useRouter } from "expo-router";
+import { useState } from "react";
 import {
   Alert,
   ImageBackground,
   StyleSheet,
   TextInput,
   TouchableOpacity,
-} from 'react-native';
+} from "react-native";
+import { joinGroup, supabase } from "@/lib/supabase";
 
 export default function JoinGroupScreen() {
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState("");
   const router = useRouter();
 
-  const handleJoin = () => {
+  const handleJoin = async () => {
     const trimmed = code.trim().toUpperCase();
 
     if (trimmed.length !== 5) {
-      Alert.alert('Invalid code', 'Code must be exactly 5 letters.');
+      Alert.alert("Invalid code", "Code must be exactly 5 letters.");
       return;
     }
 
-    // Navigate to main group page
-    router.push(`/group/${trimmed}`);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        Alert.alert("Error", "You must be logged in");
+        return;
+      }
+
+      await joinGroup(trimmed, user.id);
+      router.replace("/(tabs)");
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Invalid invite code");
+    }
   };
 
   return (
     <ImageBackground
-      source={require('../../assets/images/auth-bg-1.png')}
+      source={require("../../assets/images/auth-bg-1.png")}
       style={{ flex: 1 }}
       resizeMode="cover"
     >
       <View style={styles.container}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => router.replace('/connect-page')}
+          onPress={() => router.replace("/connect-page")}
           activeOpacity={0.7}
         >
           <Text style={styles.backButtonText}>← Back</Text>
@@ -70,76 +83,76 @@ export default function JoinGroupScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     padding: 24,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
 
   backButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 60,
     left: 24,
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
   },
 
   backButtonText: {
-    color: '#131313',
+    color: "#131313",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   content: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     gap: 16,
   },
 
   title: {
     fontSize: 32,
-    fontWeight: '700',
-    color: '#131313',
+    fontWeight: "700",
+    color: "#131313",
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   subtitle: {
     fontSize: 16,
-    color: '#131313',
+    color: "#131313",
     opacity: 0.8,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 8,
   },
 
   input: {
     height: 52,
-    backgroundColor: 'rgba(83, 212, 216, 0.35)',
-    color: '#131313',
+    backgroundColor: "rgba(83, 212, 216, 0.35)",
+    color: "#131313",
     borderRadius: 100,
     paddingHorizontal: 20,
     fontSize: 24,
     letterSpacing: 8,
-    textAlign: 'center',
-    fontWeight: '700',
+    textAlign: "center",
+    fontWeight: "700",
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderColor: "rgba(255, 255, 255, 0.4)",
   },
 
   joinButton: {
     height: 52,
-    backgroundColor: 'rgba(120, 120, 128, 0.16)',
+    backgroundColor: "rgba(120, 120, 128, 0.16)",
     borderRadius: 100,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: 12,
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderColor: "rgba(255, 255, 255, 0.4)",
   },
 
   joinButtonText: {
-    color: '#131313',
+    color: "#131313",
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
