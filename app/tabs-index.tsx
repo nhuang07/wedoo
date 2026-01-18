@@ -270,20 +270,22 @@ export default function GroupHomeScreen() {
   };
 
   const loadTasks = async (uid?: string, gid?: string) => {
-    const currentUserId = uid || userId;
-    const currentGroupId = gid || group?.id;
-    if (!currentUserId || !currentGroupId) return;
+  const currentUserId = uid || userId;
+  const currentGroupId = gid || group?.id;
+  if (!currentUserId || !currentGroupId) return;
 
-    const myTasks = await getMyTasks(currentUserId, currentGroupId);
-    setTasks(myTasks);
+  const myTasks = await getMyTasks(currentUserId, currentGroupId);
+  
+  // Only show INCOMPLETE tasks in "My Tasks"
+  const incompleteTasks = myTasks.filter((task) => !task.completed);
+  setTasks(incompleteTasks);
 
-    const groupTasks = await getCompletedGroupTasks(currentGroupId);
-    setAllTasks(groupTasks);
-    setTasksLoaded(true);
+  const groupTasks = await getCompletedGroupTasks(currentGroupId);
+  setAllTasks(groupTasks);
+  setTasksLoaded(true);
 
-    // Load uncompleted tasks for everyone
-    const uncompleted = await getUncompletedGroupTasks(currentGroupId);
-    setUncompletedTasks(uncompleted);
+  const uncompleted = await getUncompletedGroupTasks(currentGroupId);
+  setUncompletedTasks(uncompleted);
   };
 
   const loadMembers = async (gid?: string) => {
@@ -675,7 +677,6 @@ export default function GroupHomeScreen() {
           </View>
 
           {/* Tab Switcher */}
-          {tasks.length > 0 && (
             <View style={styles.tabContainer}>
               <TouchableOpacity
                 style={[styles.tab, activeTab === "mine" && styles.activeTab]}
@@ -720,7 +721,7 @@ export default function GroupHomeScreen() {
                 </Text>
               </TouchableOpacity>
             </View>
-          )}
+          
 
           {/* Task List */}
           <View style={styles.todoContainer}>
