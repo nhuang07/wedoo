@@ -1,4 +1,5 @@
 import { Text, View } from "@/components/Themed";
+import { joinGroup, supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -8,14 +9,13 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
-import { joinGroup, supabase } from "@/lib/supabase";
 
 export default function JoinGroupScreen() {
   const [code, setCode] = useState("");
   const router = useRouter();
 
   const handleJoin = async () => {
-    const trimmed = code.trim().toUpperCase();
+    const trimmed = code.trim().toLowerCase();
 
     if (trimmed.length !== 5) {
       Alert.alert("Invalid code", "Code must be exactly 5 letters.");
