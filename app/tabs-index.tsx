@@ -173,9 +173,8 @@ export default function GroupHomeScreen() {
     if (!initialized) return;
 
     const newBoost = allTasks.length * 20 + 100;
-    const cappedBoost = Math.min(newBoost, trackedDecay + 100);
-    setTrackedBoost(cappedBoost);
-  }, [allTasks.length, initialized, trackedDecay]);
+    setTrackedBoost(newBoost);
+  }, [allTasks.length, initialized]);
 
   // Calculate mood from tracked values
   useEffect(() => {
