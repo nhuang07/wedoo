@@ -771,7 +771,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   promptInput: {
-    backgroundColor: "rgba(83, 212, 216, 0.35)",
+    backgroundColor: "rgba(83, 138, 216, 0.35)",
     borderRadius: 12,
     padding: 12,
     minHeight: 80,
@@ -805,7 +805,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     backgroundColor: "rgba(255, 255, 255, 0.3)",
     borderWidth: 2,
-    borderColor: "rgba(255, 255, 255, 0.4)",
+    borderColor: "rgba(222, 222, 222, 0.47)",
   },
   activeTab: {
     backgroundColor: "#6366F1",
@@ -998,7 +998,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     borderRadius: 12,
-    backgroundColor: "#6366F1",
+    backgroundColor: "#6366f1",
   },
   confirmButtonText: {
     textAlign: "center",
@@ -1019,13 +1019,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     color: "#131313",
     borderWidth: 2,
-    borderColor: "rgba(255, 255, 255, 0.4)",
+    borderColor: "rgba(222, 222, 222, 0.47)",
   },
   addCustomButton: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#10B981",
+    backgroundColor: "#6366f1",
     justifyContent: "center",
     alignItems: "center",
   },

@@ -136,11 +136,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "rgba(255, 255, 255, 0.5)",
+    borderColor: "rgba(222, 222, 222, 0.47)",
   },
   cardCompleted: {
-    backgroundColor: "rgba(16, 185, 129, 0.2)",
-    borderColor: "rgba(16, 185, 129, 0.5)",
+    backgroundColor: "#3ee79e2a",
+    borderColor: "#41d18e",
   },
   cardSelected: {
     backgroundColor: "rgba(99, 102, 241, 0.2)",
