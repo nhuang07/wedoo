@@ -2,6 +2,7 @@
 import GroupInfoButton from "@/components/GroupInfoButton";
 import MenuDrawer from "@/components/MenuDrawer";
 import TaskCard from "@/components/TaskCard";
+import { useEffect, useRef, useState } from "react";
 
 import { generateTasksForUser } from "@/lib/gemini";
 import {
@@ -20,7 +21,7 @@ import {
   supabase,
 } from "@/lib/supabase";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -62,7 +63,7 @@ export default function GroupHomeScreen() {
   const [activeTab, setActiveTab] = useState<"mine" | "pending" | "all">(
     "mine",
   );
-  const [uncompletedTasks, setUncompletedTasks] = useState<any[]>([]);
+  const [initialized, setInitialized] = useState(false);
 
   // Profile modal
   const [selectedMember, setSelectedMember] = useState<any>(null);
@@ -73,23 +74,29 @@ export default function GroupHomeScreen() {
   // Pet mood
   const [petMood, setPetMood] = useState<number>(100);
 
+  const trackedBoostRef = useRef(trackedBoost);
+  const [uncompletedTasks, setUncompletedTasks] = useState<any[]>([]);
+
   useEffect(() => {
     loadData();
   }, []);
 
   useEffect(() => {
+    trackedBoostRef.current = trackedBoost;
+  }, [trackedBoost]);
+
+  useEffect(() => {
     const interval = setInterval(() => {
       setTrackedDecay((prev) => {
-        // Only increase decay if it's not already 100 ahead of boost
-        if (prev < trackedBoost + 100) {
+        if (prev < trackedBoostRef.current + 100) {
           return prev + 10;
         }
-        return prev; // Capped, don't increase
+        return prev;
       });
-    }, 5000); // Every 5 seconds
+    }, 5000);
 
     return () => clearInterval(interval);
-  }, [trackedBoost]);
+  }, []);
 
   // Real-time subscriptions
   useEffect(() => {
@@ -116,25 +123,38 @@ export default function GroupHomeScreen() {
   // Initialize decay based on group creation time
   useEffect(() => {
     if (!group?.created_at) return;
+    if (loading) return;
+    if (initialized) return;
 
     const secondsElapsed =
       (Date.now() - new Date(group.created_at).getTime()) / 1000;
-    const initialDecay = Math.floor(secondsElapsed / 5) * 10; // 5 seconds = 5000ms
-    const initialBoost = allTasks.length * 20;
+    const initialDecay = Math.floor(secondsElapsed / 5) * 10;
+    const initialBoost = allTasks.length * 20 + 100; // Start with 100 bonus
 
-    // Cap them relative to each other
+    let cappedDecay = initialDecay;
+    let cappedBoost = initialBoost;
+
     if (initialDecay > initialBoost + 100) {
-      setTrackedDecay(initialBoost + 100);
-    } else {
-      setTrackedDecay(initialDecay);
+      cappedDecay = initialBoost + 100;
     }
 
     if (initialBoost > initialDecay + 100) {
-      setTrackedBoost(initialDecay + 100);
-    } else {
-      setTrackedBoost(initialBoost);
+      cappedBoost = initialDecay + 100;
     }
-  }, [group?.created_at, allTasks.length]);
+
+    setTrackedDecay(cappedDecay);
+    setTrackedBoost(cappedBoost);
+    setInitialized(true);
+  }, [group?.created_at, allTasks.length, loading, initialized]);
+
+  // Update boost when tasks change (after initial load)
+  useEffect(() => {
+    if (!initialized) return;
+
+    const newBoost = allTasks.length * 20;
+    const cappedBoost = Math.min(newBoost, trackedDecay + 100);
+    setTrackedBoost(cappedBoost);
+  }, [allTasks.length, initialized, trackedDecay]);
 
   // Calculate mood from tracked values
   useEffect(() => {
