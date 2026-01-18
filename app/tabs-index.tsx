@@ -13,9 +13,11 @@ import {
   getMyTasks,
   getProfile,
   sendNudge,
+  subscribeToGroup,
   subscribeToGroupMembers,
   subscribeToGroupTasks,
   supabase,
+  updateGroupMood,
 } from "@/lib/supabase";
 import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
@@ -87,9 +89,14 @@ export default function GroupHomeScreen() {
       loadMembers();
     });
 
+    const groupChannel = subscribeToGroup(group.id, (updatedGroup) => {
+      setPetMood(updatedGroup.creature_mood ?? 100);
+    });
+
     return () => {
       supabase.removeChannel(tasksChannel);
       supabase.removeChannel(membersChannel);
+      supabase.removeChannel(groupChannel);
     };
   }, [group?.id]);
 
@@ -101,8 +108,14 @@ export default function GroupHomeScreen() {
 
   const startPetMoodDecay = () => {
     if (petIntervalRef.current) clearInterval(petIntervalRef.current);
-    petIntervalRef.current = setInterval(() => {
-      setPetMood((prev) => Math.max(prev - 10, 0));
+    petIntervalRef.current = setInterval(async () => {
+      setPetMood((prev) => {
+        const newMood = Math.max(prev - 10, 0);
+        if (group?.id) {
+          updateGroupMood(group.id, newMood);
+        }
+        return newMood;
+      });
     }, 10000);
   };
 
@@ -153,6 +166,7 @@ export default function GroupHomeScreen() {
   // Switch groups
   const handleSelectGroup = (selectedGroup: any) => {
     setGroup(selectedGroup);
+    setPetMood(selectedGroup.creature_mood ?? 100);
     if (userId && selectedGroup?.id) {
       loadTasks(userId, selectedGroup.id);
       loadMembers(selectedGroup.id);
@@ -175,6 +189,7 @@ export default function GroupHomeScreen() {
       setGroup(myGroup);
 
       if (myGroup) {
+        setPetMood(myGroup.creature_mood ?? 100);
         await loadTasks(user.id, (myGroup as any).id);
         await loadMembers((myGroup as any).id);
       } else {
@@ -277,8 +292,14 @@ export default function GroupHomeScreen() {
   // Task completion increases mood
   const handleTaskComplete = async () => {
     await loadTasks();
-    setPetMood((prev) => Math.min(prev + 20, 100));
-    startPetMoodDecay(); // <-- resets the 10-second timer
+    const newMood = Math.min(petMood + 20, 100);
+    setPetMood(newMood);
+
+    if (group?.id) {
+      await updateGroupMood(group.id, newMood);
+    }
+
+    startPetMoodDecay();
   };
 
   const openMemberProfile = async (member: any) => {
@@ -503,7 +524,7 @@ export default function GroupHomeScreen() {
 
           {/* Group Members */}
           <View style={styles.membersContainer}>
-            <Text style={styles.sectionTitle}>Team ({members.length})</Text>
+            <Text style={styles.sectionTitle}>Members ({members.length})</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {members.map((member) => (
                 <TouchableOpacity
@@ -540,17 +561,40 @@ export default function GroupHomeScreen() {
                 <ActivityIndicator color="#6366F1" />
               ) : (
                 <>
-                  <Text style={styles.aiGenerateIcon}>✨</Text>
+                  <Text style={styles.aiGenerateIcon}>
+                    <Image
+                      source={require("@/assets/images/gemini.png")}
+                      style={{ width: 30, height: 30 }}
+                    />
+                  </Text>
                   <TextInput
                     value={prompt}
                     onChangeText={setPrompt}
-                    placeholder="Get AI to generate your tasks..."
+                    placeholder="Need help setting some goals?"
                     placeholderTextColor="rgba(19, 19, 19, 0.5)"
                     style={styles.aiGenerateInput}
                   />
                   <Text style={styles.aiGenerateArrow}>→</Text>
                 </>
               )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Custom Task Input */}
+          <View style={styles.customTaskContainer}>
+            <TextInput
+              value={customTask}
+              onChangeText={setCustomTask}
+              placeholder="Add your own task..."
+              placeholderTextColor="rgba(19, 19, 19, 0.5)"
+              style={styles.customTaskInput}
+            />
+            <TouchableOpacity
+              onPress={addCustomTask}
+              style={styles.addCustomButton}
+              disabled={!customTask.trim()}
+            >
+              <Text style={styles.addCustomButtonText}>+</Text>
             </TouchableOpacity>
           </View>
 
@@ -585,24 +629,6 @@ export default function GroupHomeScreen() {
               </TouchableOpacity>
             </View>
           )}
-
-          {/* Custom Task Input */}
-          <View style={styles.customTaskContainer}>
-            <TextInput
-              value={customTask}
-              onChangeText={setCustomTask}
-              placeholder="Add your own task..."
-              placeholderTextColor="rgba(19, 19, 19, 0.5)"
-              style={styles.customTaskInput}
-            />
-            <TouchableOpacity
-              onPress={addCustomTask}
-              style={styles.addCustomButton}
-              disabled={!customTask.trim()}
-            >
-              <Text style={styles.addCustomButtonText}>+</Text>
-            </TouchableOpacity>
-          </View>
 
           {/* Task List */}
           <View style={styles.todoContainer}>

@@ -84,7 +84,7 @@ export const joinGroup = async (inviteCode: string, userId: string) => {
   return group;
 };
 
-export const getMyGroup = async (userId: string) => {
+export const getMyGroup = async (userId: string): Promise<any | null> => {
   const { data, error } = await supabase
     .from("group_members")
     .select("group_id, groups(*)")
@@ -94,7 +94,7 @@ export const getMyGroup = async (userId: string) => {
     .single();
 
   if (error) return null;
-  return data.groups;
+  return data?.groups;
 };
 
 export const getMyGroups = async (userId: string) => {
@@ -213,6 +213,25 @@ export const recalculateGroupMood = async (groupId: string) => {
     .eq("id", groupId);
 
   return mood;
+};
+
+export const subscribeToGroup = (
+  groupId: string,
+  callback: (group: any) => void,
+) => {
+  return supabase
+    .channel(`group-${groupId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "groups",
+        filter: `id=eq.${groupId}`,
+      },
+      (payload) => callback(payload.new),
+    )
+    .subscribe();
 };
 
 export const subscribeToGroupTasks = (
@@ -408,4 +427,12 @@ export const sendNudge = async (
       }),
     });
   }
+};
+
+export const updateGroupMood = async (groupId: string, newMood: number) => {
+  const { error } = await supabase
+    .from("groups")
+    .update({ creature_mood: newMood })
+    .eq("id", groupId);
+  if (error) throw error;
 };
