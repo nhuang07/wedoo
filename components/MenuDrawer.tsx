@@ -1,5 +1,17 @@
-import React from 'react';
-import { ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import {
+  Animated,
+  Dimensions,
+  ImageBackground,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const TARGET_WIDTH = SCREEN_WIDTH * 0.7;
 
 interface MenuDrawerProps {
   groups: string[];
@@ -7,6 +19,7 @@ interface MenuDrawerProps {
   onProfile: () => void;
   onCreateGroup: () => void;
   onJoinGroup: () => void;
+  onSelectGroup?: (groupId: string) => void;
 }
 
 export default function MenuDrawer({
@@ -15,76 +28,139 @@ export default function MenuDrawer({
   onProfile,
   onCreateGroup,
   onJoinGroup,
+  onSelectGroup,
 }: MenuDrawerProps) {
+  // Start fully off-screen to the left
+  const slideAnim = useRef(new Animated.Value(-TARGET_WIDTH)).current;
+
+  useEffect(() => {
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 250,
+      useNativeDriver: true, // ok because we're animating transform
+    }).start();
+  }, [slideAnim]);
+
   return (
-    <ImageBackground
-      source={require('../assets/images/auth-bg-1.png')}
-      style={styles.drawer}
-      resizeMode="cover"
-    >
-      <View style={styles.content}>
-        {/* Close Button */}
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={onClose}
-          activeOpacity={0.7}
+    <View style={styles.overlay}>
+      {/* Drawer */}
+      <Animated.View
+        style={[
+          styles.drawerContainer,
+          {
+            transform: [{ translateX: slideAnim }],
+          },
+        ]}
+      >
+        <ImageBackground
+          source={require('../assets/images/auth-bg-1.png')}
+          style={styles.bgImage}
+          resizeMode="cover"
         >
-          <Text style={styles.closeButtonText}>✕</Text>
-        </TouchableOpacity>
+          <View style={styles.content}>
+            {/* Close Button */}
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={onClose}
+              activeOpacity={0.7}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
 
-        <Text style={styles.title}>Your Groups</Text>
+            <Text style={styles.title}>Your Groups</Text>
 
-        {/* Groups List */}
-        <View style={styles.groupsList}>
-          {groups.map((group, index) => (
-            <View key={index} style={styles.groupItem}>
-              <Text style={styles.groupText}>{group}</Text>
+            {/* Groups List */}
+            <View style={styles.groupsList}>
+              {groups.length === 0 ? (
+                <Text style={styles.emptyText}>You’re not in any groups yet.</Text>
+              ) : (
+                groups.map((group, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.groupItem}
+                    activeOpacity={0.8}
+                    onPress={() => onSelectGroup && onSelectGroup(group)}
+                  >
+                    <Text style={styles.groupText}>{group}</Text>
+                  </TouchableOpacity>
+                ))
+              )}
             </View>
-          ))}
-        </View>
 
-        {/* Create / Join Group Buttons */}
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity
-            style={styles.groupButton}
-            onPress={onCreateGroup}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.groupButtonText}>Create Group</Text>
-          </TouchableOpacity>
+            {/* Create / Join Buttons */}
+            <View style={styles.actionsContainer}>
+              <TouchableOpacity
+                style={styles.groupButton}
+                onPress={onCreateGroup}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.groupButtonText}>Create Group</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.groupButton}
-            onPress={onJoinGroup}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.groupButtonText}>Join Group</Text>
-          </TouchableOpacity>
-        </View>
+              <TouchableOpacity
+                style={styles.groupButton}
+                onPress={onJoinGroup}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.groupButtonText}>Join Group</Text>
+              </TouchableOpacity>
+            </View>
 
-        {/* Profile Button */}
-        <TouchableOpacity
-          style={styles.profileButton}
-          onPress={onProfile}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.profileButtonText}>Profile</Text>
-        </TouchableOpacity>
-      </View>
-    </ImageBackground>
+            {/* Profile Button */}
+            <TouchableOpacity
+              style={styles.profileButton}
+              onPress={onProfile}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.profileButtonText}>Profile</Text>
+            </TouchableOpacity>
+          </View>
+        </ImageBackground>
+      </Animated.View>
+
+      {/* Dark overlay that closes drawer on tap */}
+      <Pressable style={styles.backdrop} onPress={onClose} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  drawer: {
+  // Full-screen overlay
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    zIndex: 999,
+  },
+
+  // Drawer fixed width & full height; solid bg so it never looks transparent
+  drawerContainer: {
+    width: TARGET_WIDTH,
+    height: '100%',
+    backgroundColor: '#ffffff',
+    overflow: 'hidden',
+  },
+
+  // Background image fills drawer
+  bgImage: {
     flex: 1,
-    width: '80%',
+    backgroundColor: '#ffffff',
   },
 
   content: {
     flex: 1,
     padding: 24,
     paddingTop: 60,
+  },
+
+  // Clickable dark area
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
   },
 
   closeButton: {
@@ -97,6 +173,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 10,
   },
 
   closeButtonText: {
@@ -115,6 +192,11 @@ const styles = StyleSheet.create({
   groupsList: {
     flex: 1,
     gap: 12,
+  },
+
+  emptyText: {
+    fontSize: 14,
+    color: '#444',
   },
 
   groupItem: {
