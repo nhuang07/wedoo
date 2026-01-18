@@ -7,7 +7,7 @@ export default function TabOneScreen() {
 
   return (
     <ImageBackground
-      source={require('../../assets/images/auth-bg-1.png')}
+    source={require('../assets/images/auth-bg-1.png')}
       style={{ flex: 1 }}
       resizeMode="cover"
     >

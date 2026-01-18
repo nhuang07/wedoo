@@ -51,12 +51,13 @@ export default function CreateGroupScreen() {
   };
 
   const goToGroup = () => {
-    router.replace("/(tabs)");
+     router.replace("/");
+;
   };
 
   return (
     <ImageBackground
-      source={require("../../assets/images/auth-bg-1.png")}
+      source={require("../assets/images/auth-bg-1.png")}
       style={{ flex: 1 }}
       resizeMode="cover"
     >

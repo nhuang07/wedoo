@@ -1,3 +1,4 @@
+// app/group-home.tsx
 import MenuDrawer from "@/components/MenuDrawer";
 import TodoItem from "@/components/TodoItem";
 import { generateTasksForUser } from "@/lib/gemini";
@@ -22,7 +23,7 @@ import {
   View,
 } from "react-native";
 
-export default function TabOneScreen() {
+export default function GroupHomeScreen() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [group, setGroup] = useState<any>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -30,7 +31,6 @@ export default function TabOneScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [members, setMembers] = useState<any[]>([]);
 
-  // For generating tasks
   const [prompt, setPrompt] = useState("");
   const [generating, setGenerating] = useState(false);
 
@@ -57,6 +57,9 @@ export default function TabOneScreen() {
 
         const groupMembers = await getGroupMembers((myGroup as any).id);
         setMembers(groupMembers);
+      } else {
+        // optional: if somehow here with no group, send back to connect-page
+        router.replace("/connect-page");
       }
     } catch (error) {
       console.log("Error loading data:", error);
@@ -123,7 +126,7 @@ export default function TabOneScreen() {
 
   return (
     <ImageBackground
-      source={require("../../assets/images/auth-bg-1.png")}
+      source={require("../assets/images/auth-bg-1.png")}
       style={{ flex: 1 }}
       resizeMode="cover"
     >

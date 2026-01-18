@@ -33,7 +33,7 @@ export default function JoinGroupScreen() {
       }
 
       await joinGroup(trimmed, user.id);
-      router.replace("/(tabs)");
+    router.replace("/")
     } catch (error: any) {
       console.log("Join error:", error);
       Alert.alert("Error", error.message || "Invalid invite code");
@@ -42,7 +42,7 @@ export default function JoinGroupScreen() {
 
   return (
     <ImageBackground
-      source={require("../../assets/images/auth-bg-1.png")}
+      source={require("../assets/images/auth-bg-1.png")}
       style={{ flex: 1 }}
       resizeMode="cover"
     >
