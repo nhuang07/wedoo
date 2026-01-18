@@ -12,6 +12,7 @@ import {
   getMyGroups,
   getMyTasks,
   getProfile,
+  getUncompletedGroupTasks,
   sendNudge,
   subscribeToGroup,
   subscribeToGroupMembers,
@@ -92,7 +93,7 @@ export default function GroupHomeScreen() {
     const interval = setInterval(() => {
       const completedCount = allTasks.filter((t) => t.completed).length;
       setPetMood(calculateMood(group, completedCount));
-    }, 5000);
+    }, 1000);
 
     return () => clearInterval(interval);
   }, [allTasks, group]);
@@ -144,6 +145,27 @@ export default function GroupHomeScreen() {
   };
   */
 
+  const calculateMood = (group: any, tasksCompletedToday: number) => {
+    if (!group?.created_at) return 100;
+
+    /*
+    const hoursElapsed =
+      (Date.now() - new Date(group.created_at).getTime()) / (1000 * 60 * 60);
+
+    // Lose 5 mood per hour, gain 10 per task completed
+    const decay = Math.floor(hoursElapsed) * 5;
+    const boost = tasksCompletedToday * 10;
+    */
+
+    const secondsElapsed =
+      (Date.now() - new Date(group.created_at).getTime()) / 1000;
+
+    // Lose 10 mood per 15 seconds, gain 20 per task completed
+    const decay = Math.floor(secondsElapsed / 15) * 10;
+    const boost = tasksCompletedToday * 20;
+
+    return Math.max(0, Math.min(100, 100 - decay + boost));
+  };
   const loadAllGroups = async (uid?: string) => {
     const currentUserId = uid || userId;
     if (!currentUserId) return;
@@ -238,7 +260,11 @@ export default function GroupHomeScreen() {
     setTasks(myTasks);
 
     const groupTasks = await getCompletedGroupTasks(currentGroupId);
-    setAllTasks(groupTasks); // Does this include ALL tasks or just completed?
+    setAllTasks(groupTasks);
+
+    // Load uncompleted tasks for everyone
+    const uncompleted = await getUncompletedGroupTasks(currentGroupId);
+    setUncompletedTasks(uncompleted);
   };
 
   const loadMembers = async (gid?: string) => {
