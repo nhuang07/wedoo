@@ -1,25 +1,25 @@
 {
   "expo": {
-    "name": "creature-collab",
-    "slug": "creature-collab",
+    "name": "Wedoo",
+    "slug": "Wedoo",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/NWhappy.png",
+    "icon": "./assets/images/logoNW.png",
     "scheme": "creaturecollab",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/NWhappy.png",
+      "image": "./assets/images/logoNW.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#6366F1"
     },
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/NWhappy.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/images/logoNW.png",
+        "backgroundColor": "#6366F1"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
