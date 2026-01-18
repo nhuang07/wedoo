@@ -1,27 +1,30 @@
 // app/group-home.tsx
 import MenuDrawer from "@/components/MenuDrawer";
 import TodoItem from "@/components/TodoItem";
+
 import { generateTasksForUser } from "@/lib/gemini";
 import {
-  getGroupMembers,
-  getMyGroup,
-  getMyTasks,
-  supabase,
+    getGroupMembers,
+    getMyGroup,
+    getMyTasks,
+    supabase,
 } from "@/lib/supabase";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  ImageBackground,
-  Modal,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    FlatList,
+    Image,
+    ImageBackground,
+    Modal,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
+const NWHappy = require("@/assets/images/NWhappy.png");
+
 
 export default function GroupHomeScreen() {
   const [tasks, setTasks] = useState<any[]>([]);
@@ -108,7 +111,7 @@ export default function GroupHomeScreen() {
   };
 
   const getCreatureImage = () => {
-    return "https://png.pngtree.com/png-vector/20231017/ourmid/pngtree-cute-cartoon-happy-dog-png-file-png-image_10201723.png";
+    return NWHappy;
   };
 
   if (loading) {
@@ -161,9 +164,7 @@ export default function GroupHomeScreen() {
 
         {/* Mascot Image */}
         <View style={styles.mascotContainer}>
-          <View style={styles.mascotBox}>
-            <Image source={{ uri: getCreatureImage() }} style={styles.mascot} />
-          </View>
+        <Image source={getCreatureImage()} style={styles.mascot} />
           <Text style={styles.moodText}>
             Mood: {group?.creature_mood || 50}%
           </Text>
@@ -271,16 +272,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 20,
   },
-  mascotBox: {
-    backgroundColor: "rgba(255, 255, 255, 0.4)",
-    borderRadius: 24,
-    padding: 20,
-    borderWidth: 2,
-    borderColor: "rgba(255, 255, 255, 0.6)",
-  },
   mascot: {
-    width: 150,
-    height: 150,
+    width: 275,
+    height: 275,
   },
   moodText: {
     color: "#131313",
