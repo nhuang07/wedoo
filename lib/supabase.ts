@@ -117,6 +117,17 @@ export const getGroupMembers = async (groupId: string) => {
   return data;
 };
 
+export const leaveGroup = async (userId: string, groupId: string) => {
+  const { error } = await supabase
+    .from("group_members")
+    .delete()
+    .eq("user_id", userId)
+    .eq("group_id", groupId);
+
+  if (error) throw error;
+  return true;
+};
+
 // ============ TASKS ============
 export const getMyTasks = async (userId: string, groupId: string) => {
   const { data, error } = await supabase

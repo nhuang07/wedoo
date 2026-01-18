@@ -1,35 +1,92 @@
-    import * as Clipboard from "expo-clipboard";
+import { leaveGroup, supabase } from "@/lib/supabase";
+import * as Clipboard from "expo-clipboard";
+import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-    Alert,
-    Modal,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 type GroupInfoButtonProps = {
   inviteCode: string;
   groupTasks: any[];
   myTasks: any[];
+  // optional callback so parent can refresh groups and side menu
+  onLeftGroup?: () => void;
 };
 
 export default function GroupInfoButton({
   inviteCode,
   groupTasks,
   myTasks,
+  onLeftGroup,
 }: GroupInfoButtonProps) {
   const [visible, setVisible] = useState(false);
 
-  const groupCompleted =
-    groupTasks?.filter((t) => t.completed).length ?? 0;
-  const myCompleted =
-    myTasks?.filter((t) => t.completed).length ?? 0;
+  const groupCompleted = groupTasks?.filter((t) => t.completed).length ?? 0;
+  const myCompleted = myTasks?.filter((t) => t.completed).length ?? 0;
 
   const handleCopy = async () => {
     await Clipboard.setStringAsync(inviteCode);
     Alert.alert("Copied 🎉", "Group code copied to clipboard");
+  };
+
+  const handleLeaveGroup = () => {
+    Alert.alert("Leave group", "Are you sure you want to leave this group?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Leave",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            // 1) Get current user
+            const { data, error: userError } = await supabase.auth.getUser();
+            if (userError || !data.user) {
+              Alert.alert("Error", "Could not get current user.");
+              return;
+            }
+            const userId = data.user.id;
+
+            // 2) Look up group by invite code to get the groupId (UUID)
+            const { data: group, error: groupError } = await supabase
+              .from("groups")
+              .select("id")
+              .eq("invite_code", inviteCode.toLowerCase())
+              .single();
+
+            if (groupError || !group?.id) {
+              Alert.alert(
+                "Error",
+                "Could not find this group in Supabase (invalid code).",
+              );
+              return;
+            }
+
+            const groupId = group.id;
+
+            // 3) Remove membership row in group_members
+            await leaveGroup(userId, groupId);
+
+            // 4) Close modal
+            setVisible(false);
+
+            // 5) Let parent screen refresh its group + side menu
+            if (onLeftGroup) {
+              onLeftGroup();
+            } else {
+              // fallback: reload tabs layout
+              router.replace("/");
+            }
+          } catch (error: any) {
+            Alert.alert("Error", error.message ?? "Failed to leave group");
+          }
+        },
+      },
+    ]);
   };
 
   return (
@@ -75,7 +132,7 @@ export default function GroupInfoButton({
             </View>
 
             {/* Stats */}
-            <View style={styles.section}>
+            <View className="section">
               <Text style={styles.label}>Stats</Text>
               <Text style={styles.stat}>
                 • Group tasks completed:{" "}
@@ -86,6 +143,15 @@ export default function GroupInfoButton({
                 <Text style={styles.bold}>{myCompleted}</Text>
               </Text>
             </View>
+
+            {/* Leave Group */}
+            <TouchableOpacity
+              style={styles.leaveButton}
+              onPress={handleLeaveGroup}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.leaveButtonText}>Leave Group</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -168,5 +234,17 @@ const styles = StyleSheet.create({
   },
   bold: {
     fontWeight: "700",
+  },
+  leaveButton: {
+    marginTop: 8,
+    paddingVertical: 12,
+    borderRadius: 16,
+    backgroundColor: "#D00000",
+    alignItems: "center",
+  },
+  leaveButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 14,
   },
 });

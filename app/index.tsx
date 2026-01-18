@@ -45,4 +45,6 @@ export default function Index() {
       <ActivityIndicator size="large" color="#6366F1" />
     </View>
   );
+
+
 }
